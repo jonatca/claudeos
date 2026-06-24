@@ -1,0 +1,132 @@
+[
+  {
+    "id": "triage-simple-yesno",
+    "description": "Short closed yes/no question, no options, no diff mention — SIMPLE_QUESTION.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "Should I bind the server to port 8080? (yes/no)" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "WAITING_INPUT", "triage": "SIMPLE_QUESTION" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-simple-pick-value",
+    "description": "Short single-value question, no bullets/options — SIMPLE_QUESTION.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "Which timeout in seconds should I use for the health check?" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "WAITING_INPUT", "triage": "SIMPLE_QUESTION" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-review-diff-big",
+    "description": "Mentions diff/review AND worktree has >=12 changed lines — REVIEW_DIFF.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "The refactor is staged. Please review the diff before I open a PR." } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 20,
+    "expected": { "state": "WAITING_INPUT", "triage": "REVIEW_DIFF" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-review-diff-look-at",
+    "description": "'look at the diff' phrasing with a large diff — REVIEW_DIFF.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "Can you look at the diff and approve the changes?" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 40,
+    "expected": { "state": "WAITING_INPUT", "triage": "REVIEW_DIFF" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-complex-options-letters",
+    "description": "Two+ enumerated options (Option A/B/C) — COMPLEX_DECISION.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "Caching layer choice — Option A: in-process LRU. Option B: Redis. Option C: mmap cache. Which one?" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "WAITING_INPUT", "triage": "COMPLEX_DECISION" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-complex-options-bullets",
+    "description": "Two+ bullet options — countOptions returns >=2 — COMPLEX_DECISION.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "Which of these two ways forward do you want?\n- rewrite the parser from scratch\n- patch the existing one in place" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "WAITING_INPUT", "triage": "COMPLEX_DECISION" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-complex-long-with-one-option",
+    "description": "Long text (>240 chars) with at least one option marker — long && options>=1 — COMPLEX_DECISION.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "There is a real architectural trade-off here that affects latency, memory, and ops burden across all of our worker processes for the foreseeable future, and I want your judgement before committing to either path because reversing it later is expensive. Option A is the conservative one. What do you prefer?" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "WAITING_INPUT", "triage": "COMPLEX_DECISION" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-fyi-done-result",
+    "description": "State DONE (result: marker) — triage always FYI_DONE.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "result: nightly eval finished, mAP 0.91" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 0,
+    "expected": { "state": "DONE", "triage": "FYI_DONE" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-fyi-done-failed",
+    "description": "State DONE (failed: marker) — triage FYI_DONE even with a large diff.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "failed: the integration test suite did not converge" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 30,
+    "expected": { "state": "DONE", "triage": "FYI_DONE" },
+    "source": "fixture"
+  },
+  {
+    "id": "triage-review-mention-but-tiny-diff-uncertain",
+    "description": "Mentions diff/review but the worktree diff is below review_diff_min_changed_lines — rules return null (uncertain). Not asserted as a category; documents the uncertain branch.",
+    "transcript": [
+      { "type": "assistant", "message": { "role": "assistant", "stop_reason": "end_turn", "content": [ { "type": "text", "text": "It is a one-line change. Mind a quick look at the diff?" } ] } }
+    ],
+    "processAlive": false,
+    "msSinceWrite": 99999,
+    "quietPeriodMs": 4000,
+    "changedLines": 3,
+    "expected": { "state": "WAITING_INPUT" },
+    "source": "fixture"
+  }
+]

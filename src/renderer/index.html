@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>ClaudeOS</title>
+    <link rel="stylesheet" href="vendor/xterm.css" />
+    <link rel="stylesheet" href="vendor/diff2html.min.css" />
+    <link rel="stylesheet" href="vendor/github-dark.min.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="vendor/xterm.js"></script>
+    <script src="vendor/addon-fit.js"></script>
+    <script src="vendor/addon-webgl.js"></script>
+    <script src="vendor/addon-clipboard.js"></script>
+    <script src="vendor/diff2html-ui.min.js"></script>
+  </head>
+  <body>
+    <div id="demo-banner" class="demo-banner" style="display:none">⚠ DEMO — nothing here is real. Every button is safe; nothing touches tmux, GitHub, or real sessions.</div>
+    <header>
+      <div class="brand"><img src="/logo.png" class="brand-logo" alt="">ClaudeOS<span class="build-marker" id="build-marker"></span></div>
+      <div class="focus-bar">
+        <span class="focus-label">focus:</span>
+        <span id="focus-val" class="focus-val">(none)</span>
+        <span class="hint">press <kbd>Ctrl+G</kbd> <kbd>f</kbd> to set</span>
+      </div>
+      <div id="counts" class="counts"></div>
+      <div id="review-stats" class="review-stats"></div>
+      <button id="open-detail-btn" class="detail-btn" title="Open (or refocus) the detached Diff/HTML window — drag it to your other screen">⧉ detail</button>
+      <div class="help-hint">press <kbd>?</kbd> for keys</div>
+    </header>
+
+    <main id="main">
+      <aside class="side" id="queue-col">
+        <h2 class="queue-h2">Tasks <span id="queue-count" class="dim"></span><input id="search-bar" class="search-bar" type="text" placeholder="⌕ search sessions" title="Search ALL past Claude sessions — type to filter, Enter = smart semantic rank (Sonnet, top 5)" /><button id="reprioritize-btn" class="reprio-btn" title="Re-prioritize: re-judge every queued task's importance against your CURRENT focus and re-rank the whole queue. Normally a task already in the queue keeps its priority — this redoes them all (use it after you change focus).">↻ re-prioritize</button></h2>
+        <ol id="queue" class="queue"></ol>
+        <h2>Sessions</h2>
+        <ul id="sessions" class="sessions"></ul>
+      </aside>
+      <div class="rz" id="rz-q" title="drag to resize · double-click to reset"></div>
+
+      <!-- PANE A (center): Overview · Terminal · Diff (default Overview) -->
+      <section class="work-pane" id="pane-A" data-pane="A">
+        <div class="pane-head">
+          <div class="pane-tabs" data-tabs="A">
+            <span class="tab" data-mode="overview">Overview</span>
+            <span class="tab" data-mode="terminal">Terminal</span>
+            <span class="tab" data-mode="diff">Diff</span>
+            <span class="tab tab-html" data-mode="html" style="display:none">HTML</span>
+          </div>
+          <span class="pane-head-actions" id="pane-A-actions"></span>
+        </div>
+        <div class="pane-body" id="pane-A-body"></div>
+      </section>
+      <div class="rz" id="rz-ab" title="drag to resize · double-click to reset"></div>
+
+      <!-- PANE B (right): Terminal · Diff (default Terminal, or Diff for PR/review) -->
+      <section class="work-pane" id="pane-B" data-pane="B">
+        <div class="pane-head">
+          <div class="pane-tabs" data-tabs="B">
+            <span class="tab" data-mode="terminal">Terminal</span>
+            <span class="tab" data-mode="diff">Diff</span>
+          </div>
+          <span class="pane-head-actions" id="pane-B-actions"></span>
+        </div>
+        <div class="pane-body" id="pane-B-body"></div>
+      </section>
+
+      <!-- single movable live-terminal host (real PTY) — appended into whichever pane shows Terminal -->
+      <div id="term-host" class="term-host" style="display:none">
+        <div class="term-head">
+          <span class="term-head-left"><button id="term-full-btn" class="term-btn" title="Maximize — terminal fills the working area, queue stays (master then m)">⛶ max</button><span id="term-title">Live terminal</span></span>
+          <span class="hint" id="term-foot"></span>
+        </div>
+        <div id="term-xterm" class="term-xterm" tabindex="0"></div>
+        <div id="term-fullhint" class="term-fullhint" style="display:none"></div>
+      </div>
+      <div id="empty-state" class="empty" style="display:none">No session needs you right now.</div>
+    </main>
+
+    <section id="weights-panel" class="weights-panel collapsed">
+      <h2 id="weights-toggle">▸ Learning — weights, nudges &amp; nightly dreams <span class="dim">(click to expand)</span></h2>
+      <div class="cols">
+        <div><h3>Weights (base + learned Δ → effective)</h3><table id="weights-table"></table></div>
+        <div><h3>Learned ranking rules (RANKING.md)</h3><pre id="ranking-md" class="ranking-md"></pre></div>
+        <div><h3>Training examples (state→pred→correct)</h3><ul id="examples-list" class="recent"></ul></div>
+        <div><h3>Adjustments &amp; nightly dreams</h3><ul id="recent-list" class="recent"></ul><table id="adj-table"></table></div>
+      </div>
+    </section>
+
+
+    <div id="help-overlay" class="overlay" style="display:none">
+      <div class="overlay-head"><span>Keymap</span><span class="hint">Esc to close</span></div>
+      <table id="help-table"></table>
+    </div>
+
+    <div id="focus-overlay" class="overlay small" style="display:none">
+      <div class="overlay-head"><span>Set current focus (biases ranking)</span><span class="hint">Enter to save · Esc cancel</span></div>
+      <input id="focus-input" type="text" placeholder="e.g. inference latency" />
+    </div>
+
+    <div id="edit-overlay" class="overlay small" style="display:none">
+      <div class="overlay-head"><span>Edit answer, then send</span><span class="hint">Enter send · Ctrl/Shift+Enter newline · Esc cancel</span></div>
+      <textarea id="edit-input" rows="5"></textarea>
+    </div>
+
+    <div id="imp-overlay" class="overlay small" style="display:none">
+      <div class="overlay-head"><span>Manual score — becomes the priority score exactly (0–100, blank to clear)</span><span class="hint">Enter to save · Esc cancel</span></div>
+      <input id="imp-input" type="text" placeholder="e.g. 90" />
+    </div>
+
+    <div id="quickprompt-overlay" class="overlay small" style="display:none">
+      <div class="overlay-head"><span>Quick Claude prompt → new session</span><span class="hint">Enter send · Ctrl+Enter set priority · Shift+Enter newline · Esc cancel</span></div>
+      <textarea id="quickprompt-input" rows="3" placeholder="type a prompt — fires off a new Claude session in the background"></textarea>
+      <div id="quickprompt-prio-row" class="qp-prio-row" style="display:none">
+        <label for="quickprompt-prio">priority</label>
+        <input id="quickprompt-prio" type="number" min="0" max="100" inputmode="numeric" placeholder="none (0–100)" autocomplete="off" />
+        <span class="hint">Enter to send with this priority · blank = none</span>
+      </div>
+    </div>
+
+    <div id="search-overlay" class="overlay" style="display:none">
+      <div class="overlay-head"><span>Search past sessions</span><span class="hint">type to filter · <kbd>Enter</kbd> smart rank (Sonnet, top 5) · <kbd>↑↓</kbd> pick · <kbd>Esc</kbd> close</span></div>
+      <input id="search-input" type="text" placeholder="search every Claude session you've ever run…" autocomplete="off" />
+      <div id="search-status" class="search-status"></div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+
+    <div id="merge-overlay" class="overlay small" style="display:none">
+      <div class="overlay-head"><span>Merge PR?</span><span class="hint">Enter to CONFIRM merge · Esc cancel</span></div>
+      <div id="merge-body" class="merge-body"></div>
+    </div>
+
+    <div id="leader-hint" class="leader-hint" style="display:none"></div>
+    <footer id="status-bar" class="status-bar"></footer>
+    <script src="renderer.js"></script>
+  </body>
+</html>

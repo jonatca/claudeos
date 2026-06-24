@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-06-24T08:36:17.792Z",
+  "cases": {
+    "state": 43,
+    "triage": 13
+  },
+  "state_accuracy": 1,
+  "triage_accuracy": 1,
+  "false_surface_rate": 0,
+  "false_surfaces": [],
+  "state_misses": [],
+  "triage_misses": [],
+  "confusion": {
+    "WAITING_INPUT": {
+      "WAITING_INPUT": 26,
+      "WORKING": 0,
+      "DONE": 0,
+      "UNKNOWN": 0
+    },
+    "WORKING": {
+      "WAITING_INPUT": 0,
+      "WORKING": 8,
+      "DONE": 0,
+      "UNKNOWN": 0
+    },
+    "DONE": {
+      "WAITING_INPUT": 0,
+      "WORKING": 0,
+      "DONE": 6,
+      "UNKNOWN": 0
+    },
+    "UNKNOWN": {
+      "WAITING_INPUT": 0,
+      "WORKING": 0,
+      "DONE": 0,
+      "UNKNOWN": 3
+    }
+  }
+}

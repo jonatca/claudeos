@@ -1,0 +1,26 @@
+node_modules
+dist/
+data/
+*.log
+*.db
+*.db-shm
+*.db-wal
+desktop/node_modules/
+.DS_Store
+.run/
+
+# ClaudeOS per-session git worktrees — never track these
+.claude/worktrees/
+
+# Optional local-only prompt logs (never tracked).
+PROMPTS.md
+claudeOS-prompts.md
+
+# Harvested eval data — may contain your real Claude session transcripts. Kept LOCAL ONLY
+# (never tracked). The tracked synthetic seeds stay: state.json, triage.json,
+# from-decisions.json, verifier.sample.json. See src/eval/goldset/README.md.
+src/eval/goldset/verifier.json
+src/eval/goldset/pending-review.json
+src/eval/results/verifier-review.html
+src/eval/results/verifier-sonnet.json
+src/eval/results/verifier-haiku.json

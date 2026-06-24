@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# PRE-COMMIT GATE: nothing that fails to compile can ever be committed.
+# This is the exact gate that would have stopped the `final` backtick from
+# breaking master (it was a TypeScript build error). Fast — just `tsc`.
+# Override in a real emergency with:  git commit --no-verify
+# ─────────────────────────────────────────────────────────────────────────────
+set -e
+cd "$(git rev-parse --show-toplevel)"
+LOG="$(mktemp)"
+printf '\033[2m[pre-commit] tsc build…\033[0m\n'
+if ! npm run build >"$LOG" 2>&1; then
+  printf '\033[31m[pre-commit] ❌ BUILD FAILED — commit blocked.\033[0m\n'
+  grep -iE "error" "$LOG" | head -20
+  printf '\033[2m(fix the error, or `git commit --no-verify` to override)\033[0m\n'
+  exit 1
+fi
+printf '\033[32m[pre-commit] ✅ build clean\033[0m\n'

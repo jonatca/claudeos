@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How ClaudeOS Prioritizes Tasks</title>
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#141821; --panel2:#1b2030; --line:#2a3142;
+    --txt:#e8ecf4; --dim:#9aa6bd; --faint:#6b7689;
+    --accent:#5fb3ff; --green:#46d39a; --amber:#ffc857; --red:#ff6b6b;
+    --violet:#b39dff; --pink:#ff8fcf;
+    --mono:'SF Mono',ui-monospace,'Cascadia Code',Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--txt);font-family:var(--sans);
+    line-height:1.55;font-size:17px;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:48px 28px 120px}
+  h1{font-size:42px;line-height:1.1;margin:0 0 8px;letter-spacing:-.5px}
+  h2{font-size:27px;margin:56px 0 6px;letter-spacing:-.3px;display:flex;align-items:center;gap:12px}
+  h2 .n{font-family:var(--mono);font-size:16px;color:var(--bg);background:var(--accent);
+    width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:700;flex:none}
+  h3{font-size:20px;margin:30px 0 4px;color:var(--txt)}
+  .lede{font-size:20px;color:var(--dim);margin:0 0 4px;max-width:760px}
+  .tag{display:inline-block;font-family:var(--mono);font-size:12.5px;color:var(--faint);
+    border:1px solid var(--line);border-radius:6px;padding:2px 9px;margin-bottom:28px}
+  p{color:var(--dim);max-width:780px}
+  p strong, li strong{color:var(--txt);font-weight:600}
+  a{color:var(--accent)}
+  code{font-family:var(--mono);font-size:.88em;background:var(--panel2);
+    padding:1.5px 6px;border-radius:5px;color:var(--violet);border:1px solid var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:22px 24px;margin:18px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:740px){.grid2{grid-template-columns:1fr}.wrap{padding:28px 16px 80px}h1{font-size:32px}}
+
+  /* pipeline */
+  .pipe{display:flex;flex-direction:column;gap:0;margin:10px 0}
+  .step{background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--accent);
+    border-radius:10px;padding:14px 18px;position:relative}
+  .step .s-n{font-family:var(--mono);color:var(--accent);font-size:13px;font-weight:700}
+  .step .s-t{font-weight:600;font-size:18px;margin:2px 0}
+  .step .s-d{color:var(--dim);font-size:15px}
+  .arrow{height:22px;width:2px;background:var(--line);margin:0 auto;position:relative}
+  .arrow::after{content:'▼';position:absolute;bottom:-6px;left:-5px;color:var(--line);font-size:12px}
+  .step.rank{border-left-color:var(--amber)}
+  .step.rank .s-n{color:var(--amber)}
+
+  /* state gate */
+  .gate{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px}
+  .state{flex:1;min-width:200px;border-radius:12px;padding:16px 18px;border:1px solid var(--line)}
+  .state h4{margin:0 0 4px;font-size:17px;display:flex;align-items:center;gap:8px}
+  .state .pill{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+  .state.show{background:rgba(70,211,154,.07);border-color:rgba(70,211,154,.35)}
+  .state.hide{background:rgba(255,107,107,.06);border-color:rgba(255,107,107,.3)}
+  .state .pill.go{background:rgba(70,211,154,.18);color:var(--green)}
+  .state .pill.no{background:rgba(255,107,107,.16);color:var(--red)}
+  .state p{font-size:14px;margin:6px 0 0;color:var(--dim)}
+
+  /* formula */
+  .formula{font-family:var(--mono);font-size:17px;text-align:center;padding:20px;
+    background:var(--panel2);border-radius:12px;border:1px solid var(--line);
+    line-height:2;color:var(--txt);overflow-x:auto}
+  .formula .w{color:var(--amber)}.formula .s{color:var(--accent)}
+  .formula .l{color:var(--violet)}.formula .o{color:var(--green)}
+
+  /* signals table */
+  table{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--faint);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.5px}
+  td.wt{font-family:var(--mono);font-weight:700;text-align:right;width:70px}
+  tr td:first-child code{color:var(--accent)}
+  .barcell{width:160px}
+  .bar{height:9px;border-radius:5px;background:var(--accent);opacity:.85}
+  .neg .bar{background:var(--red)}
+
+  /* worked example */
+  .calc{font-family:var(--mono);font-size:14.5px}
+  .calc .row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed var(--line)}
+  .calc .row.total{border-bottom:none;border-top:2px solid var(--line);margin-top:6px;font-weight:700;font-size:16px}
+  .calc .lbl{color:var(--dim)}.calc .pts{color:var(--green);font-weight:700}
+  .calc .pts.neg{color:var(--red)}
+
+  /* override chips */
+  .chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;flex:1;min-width:210px}
+  .chip b{color:var(--txt)}.chip span{display:block;color:var(--dim);font-size:13.5px;margin-top:3px}
+  .chip .k{font-family:var(--mono);font-size:12px;color:var(--amber)}
+
+  .callout{border-left:4px solid var(--amber);background:rgba(255,200,87,.06);
+    padding:14px 18px;border-radius:0 10px 10px 0;margin:16px 0}
+  .callout.safe{border-color:var(--green);background:rgba(70,211,154,.06)}
+  .callout b{color:var(--txt)}
+  .callout p{margin:4px 0 0;color:var(--dim)}
+
+  .muted{color:var(--faint);font-size:13.5px;font-family:var(--mono)}
+  hr{border:none;border-top:1px solid var(--line);margin:40px 0}
+  .filemap{font-family:var(--mono);font-size:13.5px}
+  .filemap div{padding:4px 0;color:var(--dim)}
+  .filemap b{color:var(--accent);font-weight:600}
+  .kbd{font-family:var(--mono);background:var(--panel2);border:1px solid var(--line);
+    border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:13px;color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="tag">claudeos · feat/local-terminal-alt · live code</span>
+  <h1>How ClaudeOS prioritizes tasks</h1>
+  <p class="lede">Priority isn't a flag you set. It's a score the engine
+  <strong>recomputes every 5 seconds</strong> from live signals — so the queue
+  re-sorts itself as your sessions change.</p>
+
+  <div class="card" style="margin-top:30px">
+    <div style="font-size:15px;color:var(--dim)">The one-paragraph version</div>
+    <p style="margin-top:8px;font-size:18px;color:var(--txt);max-width:none">
+    Every tick, the engine looks at all your Claude sessions. <strong>First it filters
+    by state</strong> — only sessions that are genuinely <em>ready for you</em>
+    (<span style="color:var(--green)">waiting on input</span> or
+    <span style="color:var(--green)">done</span>) are allowed through; anything still
+    <span style="color:var(--red)">working</span> stays hidden. <strong>Then it scores
+    the survivors</strong> with a transparent points formula and sorts them high→low.
+    The top one is the recommendation. You shape the ranking by nudging the
+    <em>inputs</em> (focus, importance, snooze, up/down) — never a raw priority number.</p>
+  </div>
+
+  <!-- ============ PIPELINE ============ -->
+  <h2><span class="n">1</span> The tick: what runs every 5 seconds</h2>
+  <p>One pass of <code>engine.tick()</code> — fired on a timer
+  (<code>tick_interval_ms: 5000</code>) and again whenever you act on a card.</p>
+
+  <div class="pipe">
+    <div class="step"><div class="s-n">STAGE 1 · DISCOVER</div>
+      <div class="s-t">Find recent sessions</div>
+      <div class="s-d">Scan <code>~/.claude/projects/</code> for sessions that have moved lately.</div></div>
+    <div class="arrow"></div>
+    <div class="step"><div class="s-n">STAGE 2 · DETECT STATE</div>
+      <div class="s-t">Is each session ready for me?</div>
+      <div class="s-d">Tail-read the transcript → <code>WORKING</code> / <code>WAITING_INPUT</code> / <code>DONE</code> / <code>UNKNOWN</code>. <b>This is the gate.</b></div></div>
+    <div class="arrow"></div>
+    <div class="step"><div class="s-n">STAGE 3 · TRIAGE</div>
+      <div class="s-t">What kind of attention does it need?</div>
+      <div class="s-d">Label ready ones: simple question · review a diff · complex decision · FYI done. (Rules first, cheap LLM if unsure.)</div></div>
+    <div class="arrow"></div>
+    <div class="step rank"><div class="s-n">STAGE 4 · RANK ◀ the prioritization</div>
+      <div class="s-t">Score every ready item, sort high→low</div>
+      <div class="s-d">Weighted signals + learned nudges + your overrides → one number per item.</div></div>
+    <div class="arrow"></div>
+    <div class="step"><div class="s-n">STAGE 5 · ENRICH</div>
+      <div class="s-t">Add a one-line summary + suggested answer</div>
+      <div class="s-d">Background <code>claude -p</code> so the card reads well. Doesn't affect rank.</div></div>
+  </div>
+  <p class="muted">Also fired by: any card action (snooze / nudge / answer → fast re-score) and a nightly "dream" ~03:00 that does the learning.</p>
+
+  <!-- ============ STATE GATE ============ -->
+  <h2><span class="n">2</span> The gate comes first: state before priority</h2>
+  <p>A task can only be prioritized if it's first judged <strong>ready</strong>.
+  This filter runs <em>before</em> any scoring, and it's deliberately strict.</p>
+
+  <div class="gate">
+    <div class="state show"><h4>WAITING_INPUT <span class="pill go">SURFACED</span></h4>
+      <p>Turn ended cleanly and the text asks something — <code>?</code>, "would you like", "confirm", "ready for review" — or a <code>needs input:</code> marker.</p></div>
+    <div class="state show"><h4>DONE <span class="pill go">SURFACED</span></h4>
+      <p>A <code>result:</code>/<code>failed:</code> marker, or text like done / finished / merged / deployed.</p></div>
+    <div class="state hide"><h4>WORKING <span class="pill no">HIDDEN</span></h4>
+      <p>Process alive &amp; wrote within 4s, or last turn is a <code>tool_use</code> / <code>tool_result</code> — still mid-task. <b>Never shown.</b></p></div>
+    <div class="state hide"><h4>UNKNOWN <span class="pill no">LOW</span></h4>
+      <p>Ended cleanly but no question and no done-marker → idle/parked. Surfaced but sunk by <code>idle_base −8</code>.</p></div>
+  </div>
+
+  <div class="callout safe">
+    <b>The hard safety rule: false-surface rate = 0.</b>
+    <p>Interrupting you about a session that's <em>actually still working</em> is the
+    worst failure mode. The eval (<code>src/eval/run.ts</code>) measures this directly
+    and <strong>fails the build if it's ever above zero</strong>. So when state is
+    ambiguous, the answer is "stay hidden."</p>
+  </div>
+
+  <!-- ============ THE SCORE ============ -->
+  <h2><span class="n">3</span> The score: a transparent points total</h2>
+  <p>Every ready item gets one number from <code>scoreItem()</code>. Nothing is a
+  black box — each item keeps a <code>breakdown</code> of exactly which signals gave
+  it how many points.</p>
+
+  <div class="formula">
+    score = Σ ( <span class="w">weight</span> × <span class="s">signal</span> )
+    + Σ <span class="l">learned&nbsp;nudges</span>
+    + <span class="o">your&nbsp;overrides</span>
+  </div>
+
+  <h3>The signals &amp; their weights</h3>
+  <p class="muted">from config/weights.json — edit freely; the feedback loop nudges learned adjustments, never these.</p>
+  <table>
+    <thead><tr><th>Signal</th><th>Measures</th><th class="barcell"></th><th class="wt">Weight</th></tr></thead>
+    <tbody>
+      <tr><td><code>llm_importance</code></td><td>cheap LLM rates the session 0–100 vs your focus</td><td class="barcell"><div class="bar" style="width:100%"></div></td><td class="wt">60</td></tr>
+      <tr><td><code>blocks_other_work</code></td><td>flagged as blocking other work</td><td class="barcell"><div class="bar" style="width:50%"></div></td><td class="wt">30</td></tr>
+      <tr><td><code>deadline</code></td><td>urgency of an ISO deadline</td><td class="barcell"><div class="bar" style="width:43%"></div></td><td class="wt">26</td></tr>
+      <tr><td><code>focus_match</code></td><td>keyword overlap with your declared focus</td><td class="barcell"><div class="bar" style="width:37%"></div></td><td class="wt">22</td></tr>
+      <tr><td><code>needs_input_bonus</code></td><td>state is WAITING_INPUT (actionable &gt; FYI)</td><td class="barcell"><div class="bar" style="width:33%"></div></td><td class="wt">20</td></tr>
+      <tr><td><code>effort_small</code></td><td>smaller diffs clear faster (0 lines→1, ≥400→0)</td><td class="barcell"><div class="bar" style="width:30%"></div></td><td class="wt">18</td></tr>
+      <tr><td><code>staleness</code></td><td>age in hours (≈+1× at 24h)</td><td class="barcell"><div class="bar" style="width:23%"></div></td><td class="wt">14</td></tr>
+      <tr><td><code>done_bonus</code></td><td>state is DONE (informational FYI)</td><td class="barcell"><div class="bar" style="width:10%"></div></td><td class="wt">6</td></tr>
+      <tr class="neg"><td><code>idle_base</code></td><td>state is UNKNOWN/idle — sink low, never hide</td><td class="barcell"><div class="bar" style="width:13%;margin-left:auto"></div></td><td class="wt" style="color:var(--red)">−8</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Worked example — a small PR review that's on your focus</h3>
+  <div class="card calc">
+    <div class="row"><span class="lbl">llm_importance — LLM rated it 0.80 × 60</span><span class="pts">+48.0</span></div>
+    <div class="row"><span class="lbl">focus_match — matches your focus 0.70 × 22</span><span class="pts">+15.4</span></div>
+    <div class="row"><span class="lbl">needs_input_bonus — WAITING_INPUT 1 × 20</span><span class="pts">+20.0</span></div>
+    <div class="row"><span class="lbl">effort_small — only ~30 lines 0.85 × 18</span><span class="pts">+15.3</span></div>
+    <div class="row"><span class="lbl">staleness — 3h old 0.13 × 14</span><span class="pts">+1.8</span></div>
+    <div class="row"><span class="lbl">learned nudge — "reviews defer during active work"</span><span class="pts neg">−6.0</span></div>
+    <div class="row total"><span class="lbl">PRIORITY SCORE</span><span class="pts">94.5</span></div>
+  </div>
+  <p class="muted">The exact numbers are illustrative; the structure (signal × weight, summed, plus learned &amp; manual terms) is the real formula.</p>
+
+  <!-- ============ OVERRIDES ============ -->
+  <h2><span class="n">4</span> How <em>you</em> change a task's priority</h2>
+  <p>You never type a raw priority number. You push the inputs and the score
+  re-cooks itself on the next (instant) re-rank.</p>
+  <div class="chips">
+    <div class="chip"><span class="k">set focus</span><b>Declare your focus</b><span>A text focus boosts every matching task via <code>focus_match</code> + steers the importance LLM.</span></div>
+    <div class="chip"><span class="k">importance 0–100</span><b>Manual importance</b><span>Overrides the LLM's judgment for that one item.</span></div>
+    <div class="chip"><span class="k">↑ / ↓ nudge</span><b>Rank higher / lower</b><span>A persistent per-item delta. Adding a typed <em>reason</em> teaches the nightly learner ~15× harder.</span></div>
+    <div class="chip"><span class="k">snooze</span><b>Snooze (−40)</b><span>Sinks it toward the bottom but keeps it visible. Stacks (cap 3×); cleared on complete.</span></div>
+    <div class="chip"><span class="k">pin</span><b>Pin to top</b><span>Adds <code>PIN_BASE = 100000</code> — forced above everything.</span></div>
+    <div class="chip"><span class="k">open terminal</span><b>Active task floats</b><span>Opening a session lifts it to just above the rest (<code>+ACTIVE_OVER</code>), readable numbers — not a flat 100k.</span></div>
+  </div>
+
+  <div class="callout">
+    <b>The nightly "dream" learns your taste.</b>
+    <p>~03:00 it reads how you actually triaged (which cards you picked, snoozed,
+    nudged, and why) and writes per-category nudges + evolves the plain-English rules in
+    <code>config/RANKING.md</code>. It <em>never</em> edits <code>weights.json</code>.
+    Teaching strength is graded: a silent pick ≈ 0.1×, a bare ↑/↓ ≈ 5×, and a ↑/↓
+    <strong>with a typed reason ≈ 15×</strong> — so explaining "I don't want this because…"
+    is by far the strongest signal.</p>
+  </div>
+
+  <!-- ============ ORDERING ============ -->
+  <h2><span class="n">5</span> How the queue is finally ordered</h2>
+  <p>The UI just reads the scored items out of the DB, sorted:</p>
+  <div class="formula" style="text-align:left;font-size:15px">
+    ORDER BY <span class="w">priority DESC</span>, <span class="s">updated_at DESC</span>
+  </div>
+  <p>So: <strong>highest score first</strong>, ties broken by <strong>most recently
+  changed</strong>. Then if you've opened a session, that <strong>active task floats to
+  #1</strong>. The first item becomes <code>next</code> — the recommendation shown in
+  the focused pane — and the rest are the queue list.</p>
+
+  <hr>
+
+  <h2 style="font-size:22px"><span class="n" style="background:var(--faint)">∴</span> Mental model</h2>
+  <p style="font-size:18px;max-width:820px">It's an assistant triaging your inbox
+  every 5 seconds with two firm rules: <strong>(1)</strong> never bug you about
+  something still in progress, and <strong>(2)</strong> of the things that genuinely
+  need you, sort by a transparent points total — how important, does it block, is there
+  a deadline, is it on your focus, how quick to clear, how stale — adjusted by what it's
+  learned from your past choices and any overrides you've made.</p>
+
+  <h3>Where it lives in the code</h3>
+  <div class="card filemap">
+    <div><b>src/core/engine.ts</b> — the tick pipeline, <code>queue()</code> ordering, the state gate</div>
+    <div><b>src/core/stateDetector.ts</b> — WORKING / WAITING_INPUT / DONE / UNKNOWN</div>
+    <div><b>src/core/triage.ts</b> — categorize ready sessions (rules + haiku fallback)</div>
+    <div><b>src/core/priority.ts</b> — <code>scoreItem()</code>, the transparent formula</div>
+    <div><b>config/weights.json</b> — signal weights, thresholds, cadence, learning rates</div>
+    <div><b>config/RANKING.md</b> — human-readable learned ranking rules (evolved nightly)</div>
+    <div><b>src/eval/run.ts</b> — the false-surface-rate gate (must be 0)</div>
+    <div><b>src/server/server.ts</b> — 5s tick loop, action endpoints, broadcast</div>
+  </div>
+
+</div>
+</body>
+</html>

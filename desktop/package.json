@@ -1,0 +1,18 @@
+{
+  "name": "claudeos-desktop",
+  "version": "1.0.0",
+  "description": "ClaudeOS desktop shell — a thin native window around the server-hosted ClaudeOS web app. Adds full keyboard capture, native OS notifications when a session needs you, and a global summon hotkey. Loads the remote URL, so UI changes on the server are instant (just reload) — nothing to rebuild here.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "electron-rebuild -f -w node-pty",
+    "rebuild": "electron-rebuild -f -w node-pty"
+  },
+  "dependencies": {
+    "node-pty": "^1.0.0"
+  },
+  "devDependencies": {
+    "electron": "^32.2.0",
+    "@electron/rebuild": "^3.6.0"
+  }
+}

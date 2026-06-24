@@ -1,0 +1,1059 @@
+[
+ {
+  "id": "working-tool-use",
+  "description": "Last assistant turn is a tool_use (mid-turn) \u2014 a tool is running. (processAlive: mid-turn is WORKING only while the process lives \u2014 a dead process on a tool_use is a STALL and surfaces as UNKNOWN, pinned in harness.ts.)",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "text",
+       "text": "Let me check the logs"
+      },
+      {
+       "type": "tool_use",
+       "id": "t1",
+       "name": "Bash",
+       "input": {}
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-tool-use-block-only",
+  "description": "Assistant turn contains a tool_use block but no stop_reason \u2014 hasToolUse must force WORKING. (processAlive: mid-turn is WORKING only while the process lives \u2014 a dead process on a tool_use is a STALL and surfaces as UNKNOWN, pinned in harness.ts.)",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "t1",
+       "name": "Edit",
+       "input": {}
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-recent-write-streaming",
+  "description": "Process alive and transcript written within quiet period \u2014 streaming, hidden even though the text is a question.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Should I bind the server to port 8080? (yes/no)"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 500,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-await-toolresult-continuation",
+  "description": "Last entry is a user tool_result \u2014 Claude is about to continue. (processAlive: mid-turn is WORKING only while the process lives \u2014 a dead process on a tool_use is a STALL and surfaces as UNKNOWN, pinned in harness.ts.)",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "text",
+       "text": "running"
+      },
+      {
+       "type": "tool_use",
+       "id": "t1",
+       "name": "Bash",
+       "input": {}
+      }
+     ]
+    }
+   },
+   {
+    "type": "user",
+    "message": {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "t1",
+       "content": "ok"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-stop-reason-max-tokens",
+  "description": "stop_reason is neither end_turn nor stop_sequence (max_tokens) and process alive \u2014 control not cleanly returned.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "max_tokens",
+     "content": [
+      {
+       "type": "text",
+       "text": "Here is a very long answer that got cut"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-no-assistant-turn-alive",
+  "description": "Only a user turn so far, process alive \u2014 still working, no assistant turn yet.",
+  "transcript": [
+   {
+    "type": "user",
+    "message": {
+     "role": "user",
+     "content": [
+      {
+       "type": "text",
+       "text": "Investigate the slow dataloader"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "working-empty-view-alive",
+  "description": "No turns at all but process alive \u2014 no transcript yet, still WORKING.",
+  "transcript": [],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "unknown-empty-view-dead",
+  "description": "No turns and no process \u2014 nothing to surface, UNKNOWN (hidden).",
+  "transcript": [],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "UNKNOWN"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "unknown-stop-reason-dead",
+  "description": "Non-clean stop_reason but process dead \u2014 cannot be sure, UNKNOWN (hidden).",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "max_tokens",
+     "content": [
+      {
+       "type": "text",
+       "text": "Here is a very long answer that got cut"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "UNKNOWN"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "unknown-noncommittal-end-turn",
+  "description": "Turn ended cleanly, not a question, no done-marker, no completion verb \u2014 idle/UNKNOWN (surfaced low, never hidden).",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Okay, noted."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "UNKNOWN"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-trailing-question-mark",
+  "description": "Returned text ends with a question mark.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "I found two candidate fixes. Which path should we take here?"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-would-you-like",
+  "description": "QUESTION_HINTS: 'would you like'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Would you like me to also update the tests."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-should-i",
+  "description": "QUESTION_HINTS: 'should i'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Should I bind the server to port 8080 yes or no"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-do-you-want",
+  "description": "QUESTION_HINTS: 'do you want'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Do you want me to proceed with the migration."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-which-approach",
+  "description": "QUESTION_HINTS: 'which (one|option|approach)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "There are tradeoffs. Which approach feels right to you."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-option-a-b",
+  "description": "QUESTION_HINTS: 'option a|option b'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "We could go with Option A or Option B here."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-please-confirm",
+  "description": "QUESTION_HINTS: 'please (confirm|...)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Please confirm before I push to production."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-waiting-for-your",
+  "description": "QUESTION_HINTS: 'waiting (for|on) (your|you)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "I am blocked and waiting for your go-ahead."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-ready-for-review",
+  "description": "QUESTION_HINTS: 'ready for (your )?(review|approval)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "The change is staged and ready for your review."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-review-the-diff",
+  "description": "QUESTION_HINTS: 'review the (diff|changes|pr|patch)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Please review the diff before I open the PR."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-let-me-know-if",
+  "description": "QUESTION_HINTS: 'let me know (if|whether|how)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Let me know if you want a different rollout order."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-awaiting-your-input",
+  "description": "QUESTION_HINTS: 'awaiting your (input|review|approval|decision)'.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "Awaiting your decision on the schema."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-needs-input-marker",
+  "description": "Background-session '^needs input:' marker (own line).",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "needs input: which AWS region should the bucket live in"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "done-result-marker",
+  "description": "Background-session '^result:' marker.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "result: eval finished, mAP 0.91, all tests pass"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "DONE",
+   "triage": "FYI_DONE"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "done-failed-marker",
+  "description": "Background-session '^failed:' marker \u2014 done, failed.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "failed: required binary ffmpeg is not installed"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "DONE",
+   "triage": "FYI_DONE"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "done-completion-statement",
+  "description": "Clean end_turn with a completion verb (implemented/all tests pass) but no marker/question \u2014 DONE per the completion heuristic.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "I implemented the retry logic and all tests pass."
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "DONE",
+   "triage": "FYI_DONE"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "done-result-marker-alive-quiet",
+  "description": "result: marker, process alive but write is OLD (past quiet period) \u2014 recency does not fire, marker wins.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "end_turn",
+     "content": [
+      {
+       "type": "text",
+       "text": "result: deployed to staging successfully"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "DONE",
+   "triage": "FYI_DONE"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "waiting-question-stop-sequence",
+  "description": "stop_reason 'stop_sequence' is also a clean return \u2014 a question still classifies as WAITING_INPUT.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "stop_sequence",
+     "content": [
+      {
+       "type": "text",
+       "text": "Should I delete the stale branch now?"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": false,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ },
+ {
+  "id": "question-askuserquestion-pending",
+  "description": "2026-06-11 incident (session-337): AskUserQuestion select UI is open \u2014 a pending interactive tool_use MUST surface as WAITING_INPUT, never hide as 'tool running'. Recent write must not hide it either (the prompt's own write is the last write ever until answered).",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "text",
+       "text": "I have a complete picture. Two ways to take the fix."
+      }
+     ]
+    }
+   },
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "q1",
+       "name": "AskUserQuestion",
+       "input": {
+        "questions": [
+         {
+          "question": "How far should I take the fix right now?",
+          "header": "Scope",
+          "options": [
+           {
+            "label": "Full fix"
+           },
+           {
+            "label": "Patch only"
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 500,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "incident-2026-06-11"
+ },
+ {
+  "id": "question-exitplanmode-pending",
+  "description": "ExitPlanMode (plan-approval dialog) pending \u2014 same class as AskUserQuestion: the approval UI is on screen, waiting on the operator.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "p1",
+       "name": "ExitPlanMode",
+       "input": {
+        "plan": "1. refactor\n2. test"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "incident-2026-06-11"
+ },
+ {
+  "id": "question-askuserquestion-answered",
+  "description": "The AskUserQuestion has its tool_result (operator answered) \u2014 assistant is continuing: WORKING again, the question card must not linger.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "q1",
+       "name": "AskUserQuestion",
+       "input": {
+        "questions": [
+         {
+          "question": "Which approach?"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "type": "user",
+    "message": {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "q1",
+       "content": "Your questions have been answered: Full fix"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WORKING"
+  },
+  "source": "incident-2026-06-11"
+ },
+ {
+  "id": "question-pending-with-answered-sibling",
+  "description": "Parallel sibling tool answered but the AskUserQuestion is still open \u2014 the trailing tool_result must not mask the pending question.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "q1",
+       "name": "AskUserQuestion",
+       "input": {
+        "questions": [
+         {
+          "question": "Deploy now?"
+         }
+        ]
+       }
+      },
+      {
+       "type": "tool_use",
+       "id": "b1",
+       "name": "Bash",
+       "input": {
+        "command": "git status"
+       }
+      }
+     ]
+    }
+   },
+   {
+    "type": "user",
+    "message": {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "b1",
+       "content": "clean"
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 99999,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "incident-2026-06-11"
+ },
+ {
+  "id": "question-pending-while-background-work",
+  "description": "2026-06-11 incident #3: the session ASKED (AskUserQuestion pending) and then KEPT WORKING \u2014 sibling Bash tools running and writing results after the question. The question is open (id-matched, unanswered) \u21d2 WAITING_INPUT, even though the transcript keeps moving and the last entries are tool activity.",
+  "transcript": [
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "text",
+       "text": "I need your OAuth approval to continue with the platform key \u2014 meanwhile I'll keep staging the deploy in the background."
+      }
+     ]
+    }
+   },
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "q9",
+       "name": "AskUserQuestion",
+       "input": {
+        "questions": [
+         {
+          "question": "Open this OAuth link and approve, then pick:",
+          "header": "Auth",
+          "options": [
+           {
+            "label": "Approved"
+           },
+           {
+            "label": "Use existing key"
+           }
+          ]
+         }
+        ]
+       }
+      }
+     ]
+    }
+   },
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "tool_use",
+       "id": "bg1",
+       "name": "Bash",
+       "input": {
+        "command": "npm run build"
+       }
+      }
+     ]
+    }
+   },
+   {
+    "type": "user",
+    "message": {
+     "role": "user",
+     "content": [
+      {
+       "type": "tool_result",
+       "tool_use_id": "bg1",
+       "content": "build ok"
+      }
+     ]
+    }
+   },
+   {
+    "type": "assistant",
+    "message": {
+     "role": "assistant",
+     "stop_reason": "tool_use",
+     "content": [
+      {
+       "type": "text",
+       "text": "Build green. Continuing the background staging while waiting for your approval."
+      },
+      {
+       "type": "tool_use",
+       "id": "bg2",
+       "name": "Bash",
+       "input": {
+        "command": "rsync -a dist/ staging:/srv/"
+       }
+      }
+     ]
+    }
+   }
+  ],
+  "processAlive": true,
+  "msSinceWrite": 800,
+  "quietPeriodMs": 4000,
+  "changedLines": 0,
+  "expected": {
+   "state": "WAITING_INPUT"
+  },
+  "source": "fixture"
+ }
+]

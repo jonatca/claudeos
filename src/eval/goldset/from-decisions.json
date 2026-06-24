@@ -1,0 +1,7 @@
+{
+  "generated": "2026-06-09T07:18:14.195Z",
+  "note": "CANDIDATES ONLY — harvested from real operator answers (answer_feedback). `correct_answer` is what the operator actually sent; `suggested` is what ClaudeOS proposed. A human sets `expected` + `reviewed:true` before promoting into the goldset.",
+  "harvested": 0,
+  "by_outcome": {},
+  "candidates": []
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "sample-working-tooluse",
+    "description": "SYNTHETIC. Last entry is a mid-task tool_use (running tests) — agent is actively working, must stay hidden.",
+    "expected": "WORKING",
+    "surface": false,
+    "source": "synthetic",
+    "tail": "{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"add a search box to the notes list and make the tests pass\"}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"content\":[{\"type\":\"text\",\"text\":\"Adding the search box and wiring it to the filter, then I will run the suite.\"}]}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"tool_use\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_x\",\"name\":\"Bash\",\"input\":{\"command\":\"npm test\",\"description\":\"Run the unit tests\"}}]}}"
+  },
+  {
+    "id": "sample-waiting-on-self",
+    "description": "SYNTHETIC. Agent is polling its own long-running build/script and will continue itself — waiting on self, must stay hidden.",
+    "expected": "WAITING_ON_SELF",
+    "surface": false,
+    "source": "synthetic",
+    "tail": "{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"build the production bundle and tell me the final size\"}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"tool_use\",\"content\":[{\"type\":\"tool_use\",\"id\":\"toolu_x\",\"name\":\"Bash\",\"input\":{\"command\":\"npm run build\",\"description\":\"Production build (~3 min)\"}}]}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_x\",\"content\":\"...webpack compiling... 47% ...still running...\"}]}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"content\":[{\"type\":\"text\",\"text\":\"The production build is still compiling (~3 min). I will report the bundle size as soon as it finishes.\"}]}}"
+  },
+  {
+    "id": "sample-waiting-on-operator",
+    "description": "SYNTHETIC. Agent asked the operator a real either/or question and cannot proceed — must SURFACE.",
+    "expected": "WAITING_ON_OPERATOR",
+    "surface": true,
+    "source": "synthetic",
+    "tail": "{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"set up persistence for the notes\"}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"content\":[{\"type\":\"text\",\"text\":\"Should I store the notes in localStorage (no backend, instant) or add a small SQLite file via a Node API (survives across devices)? I will not proceed until you choose.\"}]}}"
+  },
+  {
+    "id": "sample-done-report",
+    "description": "SYNTHETIC. Agent finished the task and delivered a final result summary — must SURFACE.",
+    "expected": "DONE",
+    "surface": true,
+    "source": "synthetic",
+    "tail": "{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"add the search box and run the tests\"}}\n{\"cwd\":\"/home/dev/code/notes-app\",\"sessionId\":\"sample\",\"version\":\"2.1.169\",\"gitBranch\":\"feature/search\",\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"stop_reason\":\"end_turn\",\"content\":[{\"type\":\"text\",\"text\":\"Done. The search box filters the notes list live (case-insensitive, debounced 150ms) and all 24 tests pass.\\n\\nresult: live note search added (debounced, case-insensitive); full test suite green (24/24).\"}]}}"
+  }
+]

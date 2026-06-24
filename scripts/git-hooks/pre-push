@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# PRE-PUSH GATE — protect master, keep iteration fast.
+#
+#   • Push to master/main  → run the IMPORTANT deterministic tests (build + core harness
+#                            + server E2E, ~40s, no browser). Push only if they pass.
+#   • Push to any branch   → NO gate (iterate freely; gate when you merge to master).
+#   • Important push        → `FULL=1 git push`  OR put `[full-test]` in the commit message
+#                            to ALSO run the browser UI click-through tier (~+10s).
+#   • Trivial / emergency   → `git push --no-verify` bypasses everything (small, non-dangerous
+#                            commits only — docs/comments/typos; NEVER for behavior changes).
+#
+# Best-practice split: a fast local gate on the protected branch, the heavy browser tier
+# opt-in, and CI (if added) as the belt-and-suspenders full run.
+# ─────────────────────────────────────────────────────────────────────────────
+set -uo pipefail
+TOPLEVEL="$(git rev-parse --show-toplevel)"
+
+# git feeds pre-push one line per ref on stdin: <local_ref> <local_sha> <remote_ref> <remote_sha>
+gating=0
+while read -r _localref _localsha remoteref _remotesha; do
+  case "$remoteref" in
+    refs/heads/master|refs/heads/main) gating=1 ;;
+  esac
+done
+if [ "$gating" = 0 ]; then
+  printf '\033[2m[pre-push] not pushing master/main → test gate skipped (iterate freely)\033[0m\n'
+  exit 0
+fi
+
+# ⚠️ CRITICAL: a git hook exports GIT_DIR/GIT_INDEX_FILE/GIT_WORK_TREE. The test suite spawns
+# `git` for throwaway repos; if those vars leak in, a test's `git add/commit` hijacks THIS repo.
+# Strip them before running any test (the suite also self-purges in helpers.ts — belt + braces).
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_OBJECT_DIRECTORY GIT_COMMON_DIR GIT_NAMESPACE GIT_CONFIG GIT_CONFIG_GLOBAL GIT_CONFIG_SYSTEM
+cd "$TOPLEVEL"
+
+LOG="$(mktemp)"
+fail() {
+  printf '\033[31m[pre-push] ❌ %s — push to master BLOCKED.\033[0m\n' "$1"
+  grep -aE "✗|error|passed, [0-9]+ failed" "$LOG" | tail -25
+  printf '\033[2m(fix it, or `git push --no-verify` to override)\033[0m\n'
+  exit 1
+}
+
+printf '\033[2m[pre-push] master push → build + core + server E2E…\033[0m\n'
+npm run build >"$LOG" 2>&1 || fail "build failed"
+for t in harness.js answer_feedback_test.js desktop_term_leak_test.js e2e_server.js; do
+  printf '\033[2m[pre-push]   %s…\033[0m\n' "$t"
+  node "dist/test/$t" >"$LOG" 2>&1 || fail "$t failed"
+done
+
+# Heavy browser UI tier — opt in for an important push.
+if [ "${FULL:-0}" = "1" ] || git log -1 --format=%B 2>/dev/null | grep -qiE '\[full-test\]'; then
+  printf '\033[2m[pre-push]   full run → UI click-through (browser)…\033[0m\n'
+  node dist/test/e2e_ui.js >"$LOG" 2>&1 || fail "UI click-through failed"
+fi
+
+printf '\033[32m[pre-push] ✅ all important tests green — pushing to master\033[0m\n'
